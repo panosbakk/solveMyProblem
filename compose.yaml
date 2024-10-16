@@ -47,7 +47,7 @@ services:
     networks:
       - app-network
 
-  solver:
+  solver1:
     build:
       context: ./solver_ms
     environment:
@@ -62,8 +62,38 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    deploy:
-      replicas: 5 
+  
+  solver2:
+    build:
+      context: ./solver_ms
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    env_file:
+      - path: ./solver_ms/.env.local
+        required: true
+    command: ["/bin/sh", "-c", ". /venv/bin/activate && npm start"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+  
+  solver3:
+    build:
+      context: ./solver_ms
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    env_file:
+      - path: ./solver_ms/.env.local
+        required: true
+    command: ["/bin/sh", "-c", ". /venv/bin/activate && npm start"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
     
   #load balancer
   nginx:
@@ -71,7 +101,9 @@ services:
     ports:
       - "3003:80"  # Expose port 3003 to the host
     depends_on:
-      - solver
+      - solver1
+      - solver2
+      - solver3
     networks:
       - app-network
     volumes:
